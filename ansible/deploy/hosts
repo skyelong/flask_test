@@ -1,0 +1,7 @@
+[webservers]
+test.barnett.science
+
+[webservers:vars]
+app_name=flask-project
+ansible_ssh_user=ubuntu
+ssl=False

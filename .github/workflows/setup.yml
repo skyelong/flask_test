@@ -1,0 +1,63 @@
+name: setup
+
+on:
+  push:
+
+jobs:
+  setup:
+    if: ( github.event.commits[0].message == 'Initial commit' ) || github.run_number == 1
+    runs-on: ubuntu-latest
+    steps:
+    - name: set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+
+    - name: copy eepository contents
+      uses: actions/checkout@v2
+        
+    - name: modify files
+      run: |
+        import re, os
+        from pathlib import Path
+
+        nwo = os.getenv('GITHUB_REPOSITORY')
+        username, repo_name = nwo.split('/')
+
+        pr_msg_path = Path('_docs/_setup_pr_template.md')
+        pr = pr_msg_path.read_text().replace('{_username_}', username).replace('{_repo_name_}', repo_name)
+        pr_msg_path.write_text(pr)
+
+        readme_path = Path('README.md')
+        readme_template_path = Path('_docs/README_TEMPLATE.md')
+        readme = readme_template_path.read_text().replace('{_username_}', username).replace('{_repo_name_}', repo_name)
+        readme_path.write_text(readme)
+      shell: python
+
+    - name: commit changes
+      run: |
+        git config --global user.email "${GH_EMAIL}"
+        git config --global user.name "${GH_USERNAME}"
+        git checkout -B automated-setup
+        git add README.md
+        git commit -m'setup repo'
+        git push -f --set-upstream origin automated-setup
+      env: 
+        GH_EMAIL: ${{ github.event.commits[0].author.email }}
+        GH_USERNAME: ${{ github.event.commits[0].author.username }}
+
+    - name: open PR
+      uses: actions/github-script@0.6.0
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          var fs = require('fs');
+          var contents = fs.readFileSync('_docs/_setup_pr_template.md', 'utf8');
+          github.pulls.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: "Complete repository setup",
+            head: "automated-setup",
+            base: "main",
+            body: `${contents}`
+          })
