@@ -1,45 +1,21 @@
-# flask project
+![](https://github.com/skyelong/flask_test/workflows/deploy/badge.svg) 
 
-Barebones flask project that continuously deploys to an AWS EC2 instance using
-Github actions and Ansible.
+# flask_test
 
-![](https://barnett.science/images/github_actions/diagram.png)
+You've completed setup of your flask project repository!
 
-## Setup
+## Next steps
 
-Generate a new repository based on this one by [clicking here](https://github.com/wesbarnett/flask-project/generate).
-
-A PR will be opened in your repository a few minutes after you generate the repository, outlining the next steps. Essentially you will generate a keypair, store private key in Github and the public on AWS, provision your EC2 instance, update your domain's A record to point to it, and then update one configuration file.
-
-## Continuous deployment
-
-Every time a push is made to the default branch `main`,
-the Github Action that updates your EC2 instance will run. In other words, you should
-make development changes in another branch, test them, and when satisfied they are ready
-for production, merge them into your default branch and push to Github.
-
-To add other Python packages to your deployment, update the `requirements.txt`.
+- Anytime you push changes to the `main` branch, Github Pages will run an Ansible playbook to update your Flask server on your EC2 instance (or whatever server you are using). You can monitor the logs of this if you like on the <a href="https://github.com/skyelong/flask_test/actions">Actions tab</a> of your repo.
+- If you make updates to the directory structure, like moving `__init__.py` to another location, you may break the Github action from working. It expects `__init__.py` to be under application/app. If you want it elsewhere, you’ll need to modify the ansible templates yourself. Other than that, there shouldn’t be any restrictions on what you can change or add to your flask server (templates, static files, etc.).
+- You can add additional Python packages to the top-level `requirements.txt` and they will be installed automatically as part of the ansible provisioning.
+- You can still ssh into your EC2 instance and check the status of both the gunicorn service (`flask-project.service` by default) and nginx service (`nginx.service`) using systemd. Note that if you make any changes to flask-project.service or the nginx configuration you should do that in the ansible template in your repository, not in your instance directly; otherwise, any changes you make to those files will be overwritten by your ansible playbook when you push later.
 
 ## Run locally
 
-To run with gunicorn do:
+To run with gunicorn on your local machine do:
 
     gunicorn --chdir application -b :8080 app:app
 
 Then visit `http://localhost:8080`.
 
-## References
-
-I found [this](https://github.com/Preetam/transverse/tree/master/.github)
-repository helpful in setting up Ansible for use with Github workflows and actions and
-just want to give a shout out to it.
-
-I was also inspired by the work done by [fastpages](https://github.com/fastai/fastpages/) which uses Github workflows and
-actions to automatically update Github pages. I definitely looked at several of their
-files and borrowed some of their ideas!
-
-## See also
-
-See the [original blog post
-here](https://barnett.science/linux/aws/ansible/github/2020/05/28/flask-actions.html)
-with further details on these instructions.
